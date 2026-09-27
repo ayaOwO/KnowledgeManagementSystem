@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge System</title>
+<style>
+  body { font: 1rem system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; }
+  form { display: grid; gap: .7rem; margin-bottom: 2rem; }
+  label { display: grid; gap: .2rem; }
+  input, select, textarea, button { font: inherit; padding: .5rem; }
+  button { cursor: pointer; }
+  article { border-top: 1px solid #ccc; padding: 1rem 0; }
+  article h3 { margin: 0 0 .3rem; }
+  #message { min-height: 1.5rem; }
+  [hidden] { display: none; }
+</style>
+<h1>Knowledge System</h1>
+<h2>Add document</h2>
+<form id="add-form">
+  <label>Name <input name="name" required></label>
+  <label>Type <select name="type"><option value="image">Image</option><option value="text">Text</option></select></label>
+  <label id="image-field">Image <input name="image" type="file" accept="image/*" required></label>
+  <label id="text-field" hidden>Contents <textarea name="contents"></textarea></label>
+  <label id="description-field">Description <textarea name="description"></textarea></label>
+  <label>Tags (comma separated) <input name="tags"></label>
+  <button>Add document</button>
+</form>
+<h2>Documents</h2>
+<form id="search-form">
+  <label>Search descriptions <input name="term" type="search"></label>
+  <button>Search</button>
+  <button type="button" id="list-all">List all</button>
+</form>
+<p id="message" role="status"></p>
+<div id="results"></div>
+<script>
+  const message = document.querySelector('#message');
+  const results = document.querySelector('#results');
+
+  async function request(url, options) {
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`Request failed (${response.status})`);
+    return response.json();
+  }
+
+  async function showDocuments(term = '') {
+    const documents = await request(term ? `/search?term=${encodeURIComponent(term)}` : '/list');
+    results.replaceChildren();
+    for (const item of documents) {
+      const article = document.createElement('article');
+      const title = document.createElement('h3');
+      const details = document.createElement('p');
+      title.textContent = item.name;
+      details.textContent = `${item.type} · ${item.description} · ${item.tags.join(', ')}`;
+      article.append(title, details);
+      results.append(article);
+    }
+    message.textContent = `${documents.length} document(s)`;
+  }
+
+  document.querySelector('#search-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    try { await showDocuments(new FormData(event.currentTarget).get('term').trim()); }
+    catch (error) { message.textContent = error.message; }
+  });
+
+  document.querySelector('#list-all').addEventListener('click', async () => {
+    document.querySelector('#search-form').reset();
+    try { await showDocuments(); }
+    catch (error) { message.textContent = error.message; }
+  });
+
+  const addForm = document.querySelector('#add-form');
+  addForm.elements.type.addEventListener('change', () => {
+    const isImage = addForm.elements.type.value === 'image';
+    document.querySelector('#image-field').hidden = !isImage;
+    document.querySelector('#text-field').hidden = isImage;
+    document.querySelector('#description-field').hidden = !isImage;
+    addForm.elements.image.required = isImage;
+    addForm.elements.contents.required = !isImage;
+  });
+
+  addForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    try {
+      const data = new FormData();
+      data.set('name', form.elements.name.value);
+      data.set('type', form.elements.type.value);
+      if (form.elements.type.value === 'image') {
+        const file = form.elements.image.files[0];
+        const reader = new FileReader();
+        const image = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+        data.set('object_path', image);
+        data.set('description', form.elements.description.value || file.name);
+      } else {
+        data.set('object_path', '');
+        data.set('description', form.elements.contents.value);
+      }
+      const tags = form.elements.tags.value.split(',').map(tag => tag.trim()).filter(Boolean);
+      for (const tag of tags.length ? tags : ['']) data.append('tags', tag);
+      const response = await fetch('/uploadform', { method: 'POST', body: data });
+      if (!response.ok) throw new Error(`Upload failed (${response.status})`);
+      form.reset();
+      form.elements.type.dispatchEvent(new Event('change'));
+      document.querySelector('#search-form').reset();
+      await showDocuments();
+    } catch (error) { message.textContent = error.message; }
+  });
+
+  showDocuments().catch(error => { message.textContent = error.message; });
+</script>
+</html>
