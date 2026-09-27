@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, Form, status
 
 from knowledgesystem.dependencies import get_labeler
 from knowledgesystem.logic import abstract_labeler
-from knowledgesystem.main import db
 from knowledgesystem.models import Document
 
 router = APIRouter(tags=["knowledge"])
+db: list[Document] = []
 
 
 @router.post("/uploadform", status_code=status.HTTP_201_CREATED)

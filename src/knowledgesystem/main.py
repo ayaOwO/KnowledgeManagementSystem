@@ -11,7 +11,6 @@ app = FastAPI()
 
 logfire.configure()
 logfire.instrument_pydantic_ai()
-db: list[Document] = []
 
 app.include_router(knowledge_store.router)
 
