@@ -3,7 +3,7 @@ import enum
 from pydantic import BaseModel
 
 
-class Document(BaseModel):
+class Document(BaseModel, extra="forbid"):
     name: str
     type: DocumentType
     object_path: str
@@ -13,4 +13,4 @@ class Document(BaseModel):
 
 class DocumentType(enum.Enum):
     IMAGE = "image"
-    VIDEO = "video"
+    TEXT = "text"
