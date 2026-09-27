@@ -1,34 +1,22 @@
+from pathlib import Path
+
+import logfire
 from fastapi import FastAPI
+from starlette.responses import HTMLResponse
+
+from .models import Document
+from .routers import knowledge_store
 
 app = FastAPI()
 
-items = []
+logfire.configure()
+logfire.instrument_pydantic_ai()
+db: list[Document] = []
 
+app.include_router(knowledge_store.router)
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World"}
+    return HTMLResponse((Path(__file__).parent / "front" / "index.html").read_text())
 
 
-@app.post("/upload")
-async def upload_file(name: str, content: str):
-    items.append({"name": name, "content": content})
-    return {"success": True}
-
-
-@app.get("/search")
-async def search(term: str):
-    for item in items:
-        if term in item["content"]:
-            return item
-    return {"message": f"Not found {term}"}
-
-
-@app.get("/view")
-async def view(item_id: int):
-    return items[item_id]
-
-
-@app.get("/list")
-async def list_items():
-    return items
