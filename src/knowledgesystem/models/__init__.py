@@ -1,4 +1,4 @@
-from .document import Document, DocumentType
+from .documents_table import DocumentsTable
 from .settings import Settings
 
-__all__ = ["Document", "DocumentType", "Settings"]
+__all__ = ["DocumentsTable", "Settings"]
