@@ -1,14 +1,14 @@
 import enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Document(BaseModel, extra="forbid"):
     name: str
     type: DocumentType
-    object_path: str
-    description: str
-    tags: list[str]
+    contents: str | bytes
+    description: str = ""
+    tags: list[str] = Field(default=[])
 
 
 class DocumentType(enum.Enum):

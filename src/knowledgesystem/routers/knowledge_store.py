@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, status
+from fastapi import APIRouter, Depends, File, Form, UploadFile, status
 
 from knowledgesystem.dependencies import get_labeler
 from knowledgesystem.logic import abstract_labeler
-from knowledgesystem.models import Document
+from knowledgesystem.models import Document, DocumentType
 
 router = APIRouter(tags=["knowledge"])
 db: list[Document] = []
@@ -12,18 +12,28 @@ db: list[Document] = []
 
 @router.post("/uploadform", status_code=status.HTTP_201_CREATED)
 async def upload_form(
-    document: Annotated[Document, Form()],
+    name: Annotated[str, Form()],
+    file_upload: Annotated[UploadFile, File()],
     labeler: Annotated[abstract_labeler, Depends(get_labeler)],
 ) -> None:
-    db.append(labeler.label(document))
+    content = await file_upload.read()
+    document_type = DocumentType.TEXT
+    if file_upload.content_type != "text/plain":
+        document_type = DocumentType.IMAGE
+        metadata = await labeler.label_image(content, file_upload.content_type, name)
+    else:
+        content = content.decode("utf-8")
+        metadata = await labeler.label_text(content, name)
 
+    document = Document(
+        name=name,
+        type=document_type,
+        contents=content,
+        tags=metadata.tags,
+        description=metadata.description,
+    )
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED)
-async def upload(
-    document: Document,
-    labeler: Annotated[abstract_labeler, Depends(get_labeler)],
-) -> None:
-    db.append(labeler.label(document))
+    db.append(document)
 
 
 @router.get("/search", response_model=list[Document])
