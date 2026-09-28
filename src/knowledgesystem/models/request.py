@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GeneratedMetadata(BaseModel):
-    description: str
+    description: str = Field(max_length=255)
     tags: list[str]

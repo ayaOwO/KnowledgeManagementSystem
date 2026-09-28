@@ -1,10 +1,17 @@
 from pydantic_ai import Agent, BinaryContent
+from pydantic_ai.capabilities import Thinking
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from knowledgesystem.logic import abstract_labeler
 from knowledgesystem.models import Settings
 from knowledgesystem.models.request import GeneratedMetadata
+
+METADATA_INSTRUCTIONS = (
+    "Describe the provided content in one clear sentence"
+    "Return specific, lowercase tags for its main topics or visible objects. "
+    "Use only details supported by the content; avoid guesses and duplicate tags."
+)
 
 
 class AiLabeler(abstract_labeler.AbstractLabeler):
@@ -17,15 +24,14 @@ class AiLabeler(abstract_labeler.AbstractLabeler):
             ),
         )
 
-        self.agent: Agent = Agent(model)
+        self.agent: Agent = Agent(model, capabilities=[Thinking(effort="low")])
 
     async def label_image(
         self, contents: bytes, media_type: str, name: str
     ) -> GeneratedMetadata:
         res = await self.agent.run(
             [BinaryContent(data=contents, media_type=media_type)],
-            instructions="Write a description of the item provided by the user."
-            "Add tags for the content as well",
+            instructions=METADATA_INSTRUCTIONS,
             output_type=GeneratedMetadata,
         )
         return res.output
@@ -33,8 +39,7 @@ class AiLabeler(abstract_labeler.AbstractLabeler):
     async def label_text(self, contents: str, name: str) -> GeneratedMetadata:
         res = await self.agent.run(
             contents,
-            instructions="Write a description of the item provided by the user."
-            "Add tags for the content as well",
+            instructions=METADATA_INSTRUCTIONS,
             output_type=GeneratedMetadata,
         )
         return res.output
