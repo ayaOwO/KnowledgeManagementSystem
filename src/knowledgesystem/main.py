@@ -3,6 +3,7 @@ from pathlib import Path
 
 import logfire
 from fastapi import FastAPI
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from starlette.responses import HTMLResponse
 
@@ -14,7 +15,8 @@ from knowledgesystem.routers import knowledge_store
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    engine = create_async_engine(settings.database_url)
+    database_url = make_url(settings.database_url).set(drivername="postgresql+psycopg")
+    engine = create_async_engine(database_url)
     session_factory: async_sessionmaker = async_sessionmaker(
         engine, expire_on_commit=False
     )
