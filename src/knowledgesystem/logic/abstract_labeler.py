@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from knowledgesystem.models.request import GeneratedMetadata
+from knowledgesystem.models import GeneratedMetadata
 
 
 class AbstractLabeler(ABC):

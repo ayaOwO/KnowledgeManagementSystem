@@ -4,11 +4,10 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from knowledgesystem.logic import abstract_labeler
-from knowledgesystem.models import Settings
-from knowledgesystem.models.request import GeneratedMetadata
+from knowledgesystem.models import GeneratedMetadata, Settings
 
 METADATA_INSTRUCTIONS = (
-    "Describe the provided content in one clear sentence"
+    "Describe the provided content in a short clear sentence. "
     "Return specific, lowercase tags for its main topics or visible objects. "
     "Use only details supported by the content; avoid guesses and duplicate tags."
 )
@@ -30,7 +29,10 @@ class AiLabeler(abstract_labeler.AbstractLabeler):
         self, contents: bytes, media_type: str, name: str
     ) -> GeneratedMetadata:
         res = await self.agent.run(
-            [BinaryContent(data=contents, media_type=media_type)],
+            [
+                "Describe and tag this image.",
+                BinaryContent(data=contents, media_type=media_type),
+            ],
             instructions=METADATA_INSTRUCTIONS,
             output_type=GeneratedMetadata,
         )
