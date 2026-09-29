@@ -6,17 +6,22 @@ from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from starlette.responses import HTMLResponse
 
-from .dependencies import get_settings
-from .routers import knowledge_store
+from knowledgesystem.data import SqlDocumentStore
+from knowledgesystem.dependencies import get_settings
+from knowledgesystem.routers import knowledge_store
 
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     engine = create_async_engine(settings.database_url)
-    app.state.session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    session_factory: async_sessionmaker = async_sessionmaker(
+        engine, expire_on_commit=False
+    )
+    app.state.session_factory = session_factory
+    app.state.document_store = SqlDocumentStore(session_factory)
     yield
-    await app.state.engine.dispose()
+    await engine.dispose()
 
 
 app = FastAPI(lifespan=lifespan)
