@@ -22,6 +22,7 @@ dependencies = [
 
 [project.scripts]
 KnowledgeSystem = "KnowledgeSystem.main:app"
+app = "knowledgesystem.main:app"
 
 [build-system]
 requires = ["uv_build>=0.11.19,<0.12.0"]

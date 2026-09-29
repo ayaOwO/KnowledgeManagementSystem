@@ -16,6 +16,7 @@ from knowledgesystem.logic import AbstractLabeler
 from knowledgesystem.models.response import Document, DocumentCreate
 
 router = APIRouter(tags=["knowledge"])
+MAX_UPLOAD_BYTES = 3 * 1024 * 1024
 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
@@ -25,7 +26,12 @@ async def upload(
     document_store: Annotated[AbstractDocumentStore, Depends(get_document_store)],
     labeler: Annotated[AbstractLabeler, Depends(get_labeler)],
 ) -> None:
-    content = await file_upload.read()
+    content = await file_upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="File must be 3 MiB or smaller",
+        )
     match file_upload.content_type:
         case "text/plain":
             metadata = await labeler.label_text(content.decode(), name)
