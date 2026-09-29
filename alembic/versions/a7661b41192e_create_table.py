@@ -6,19 +6,18 @@ Create Date: 2026-09-28 16:23:06.970694
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
+import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision: str = "a7661b41192e"
-down_revision: Union[str, Sequence[str], None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -27,8 +26,9 @@ def upgrade() -> None:
         "documents",
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("name", sa.Unicode(255), nullable=False),
-        sa.Column("description", sa.Unicode(255), nullable=False),
+        sa.Column("description", sa.Unicode(500), nullable=False),
         sa.Column("content_type", sa.Unicode(50), nullable=False),
+        sa.Column("content_text", sa.UnicodeText(), nullable=True),
         sa.Column("content", sa.LargeBinary(), nullable=False),
         sa.Column("tags", postgresql.ARRAY(sa.UnicodeText()), nullable=False),
         sa.Column(
