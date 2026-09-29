@@ -82,10 +82,9 @@ prepend_sys_path = [
 # version location specification; This defaults
 # to <script_location>/versions.  When using multiple version
 # directories, initial revisions must be specified with --version-path.
-# version_locations = [
-#    "%(here)s/alembic/versions",
-#    "%(here)s/foo/bar"
-# ]
+version_locations = [
+    "%(here)s/alembic/versions",
+]
 
 
 # set to 'true' to search source files recursively
@@ -121,4 +120,3 @@ prepend_sys_path = [
 # type = "exec"
 # executable = "ruff"
 # options = "check --fix REVISION_SCRIPT_FILENAME"
-
