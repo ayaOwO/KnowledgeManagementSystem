@@ -12,7 +12,7 @@ class SqlDocumentStore(AbstractDocumentStore):
         self.session_maker = session_maker
 
     async def add_document(self, document: DocumentCreate) -> None:
-        content_text = ""
+        content_text = None
         if document.content_type == "text/plain":
             content_text = document.content.decode()
         async with self.session_maker() as session:
@@ -45,9 +45,13 @@ class SqlDocumentStore(AbstractDocumentStore):
         return Document.model_validate(doc)
 
     async def search_documents(self, term: str) -> list[Document]:
+        term = term.lower()
         search_query = select(DocumentsTable).where(
-            DocumentsTable.tags.contains([term.lower()])
+            DocumentsTable.tags.contains([term])
+            | DocumentsTable.content_text.icontains(term)
+            | DocumentsTable.description.icontains(term)
         )
+
         async with self.session_maker() as session:
             res = await session.execute(search_query)
 

@@ -13,5 +13,6 @@ class DocumentCreate(BaseModel):
 
 class Document(DocumentCreate):
     id: int
+    content_text: str | None
     created_at: datetime
     model_config = ConfigDict(from_attributes=True, ser_json_bytes="base64")

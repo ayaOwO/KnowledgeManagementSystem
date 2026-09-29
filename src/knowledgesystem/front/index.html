@@ -12,6 +12,8 @@
   button { cursor: pointer; }
   article { border-top: 1px solid #ccc; padding: 1rem 0; }
   article h3 { margin: 0 0 .3rem; }
+  article img { display: block; max-width: 100%; max-height: 20rem; margin: .7rem 0; }
+  .document-content { white-space: pre-wrap; overflow-wrap: anywhere; }
   #message { min-height: 1.5rem; }
   [hidden] { display: none; }
 </style>
@@ -22,14 +24,14 @@
   <label>Type <select name="type"><option value="image">Image</option><option value="text">Text</option></select></label>
   <fieldset>
     <legend>Contents</legend>
-    <label id="image-field">Image <input name="image" type="file" accept="image/*" required></label>
+    <label id="image-field">Image <input name="image" type="file" accept="image/jpeg,image/png,image/webp" required></label>
     <label id="text-field" hidden>Text <textarea name="contents"></textarea></label>
   </fieldset>
   <button>Add document</button>
 </form>
 <h2>Documents</h2>
 <form id="search-form">
-  <label>Search descriptions <input name="term" type="search"></label>
+  <label>smart search<input name="term" type="search"></label>
   <button>Search</button>
   <button type="button" id="list-all">List all</button>
 </form>
@@ -51,10 +53,38 @@
     for (const item of documents) {
       const article = document.createElement('article');
       const title = document.createElement('h3');
-      const details = document.createElement('p');
+      const description = document.createElement('p');
+      const tags = document.createElement('p');
+      const deleteButton = document.createElement('button');
       title.textContent = item.name;
-      details.textContent = [item.type, item.description, ...item.tags].filter(Boolean).join(' · ');
-      article.append(title, details);
+      description.textContent = `Description: ${item.description}`;
+      tags.textContent = `Tags: ${item.tags.join(', ')}`;
+      deleteButton.type = 'button';
+      deleteButton.textContent = 'Delete';
+      deleteButton.setAttribute('aria-label', `Delete ${item.name}`);
+      deleteButton.addEventListener('click', async () => {
+        if (!confirm(`Delete ${item.name}?`)) return;
+        try {
+          const response = await fetch(`/delete?document_id=${encodeURIComponent(item.id)}`);
+          if (!response.ok) throw new Error(`Delete failed (${response.status})`);
+          await showDocuments(term);
+        } catch (error) { message.textContent = error.message; }
+      });
+      article.append(title);
+      const base64 = item.content.replace(/-/g, '+').replace(/_/g, '/');
+      if (['image/jpeg', 'image/png', 'image/webp'].includes(item.content_type)) {
+        const image = document.createElement('img');
+        image.src = `data:${item.content_type};base64,${base64}`;
+        image.alt = item.description || item.name;
+        image.loading = 'lazy';
+        article.append(image);
+      } else if (item.content_type === 'text/plain') {
+        const content = document.createElement('p');
+        content.className = 'document-content';
+        content.textContent = new TextDecoder().decode(Uint8Array.from(atob(base64), char => char.charCodeAt(0)));
+        article.append(content);
+      }
+      article.append(description, tags, deleteButton);
       results.append(article);
     }
     message.textContent = `${documents.length} document(s)`;
@@ -92,7 +122,7 @@
       } else {
         data.set('file_upload', new File([form.elements.contents.value], 'contents.txt', { type: 'text/plain' }));
       }
-      const response = await fetch('/uploadform', { method: 'POST', body: data });
+      const response = await fetch('/upload', { method: 'POST', body: data });
       if (!response.ok) throw new Error(`Upload failed (${response.status})`);
       form.reset();
       form.elements.type.dispatchEvent(new Event('change'));

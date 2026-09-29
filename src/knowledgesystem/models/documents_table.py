@@ -17,6 +17,7 @@ class DocumentsTable(Base):
     description: Mapped[str] = mapped_column(String(255))
     content_type: Mapped[str] = mapped_column(String(50))
     content: Mapped[bytes] = mapped_column(LargeBinary)
+    content_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[list[str]] = mapped_column(ARRAY(Text))
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
