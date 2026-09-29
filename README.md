@@ -1,4 +1,7 @@
 # Deploy on Vercel
+I used codex to create this project, notably on the vercel deploy and the app frontend
+vercel deployment is here
+https://knowledgesystem.vercel.app/
 
 Vercel loads the existing FastAPI app from the `app` entry in `pyproject.toml`.
 Import this repository as a Vercel project and set these environment variables
